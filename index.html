@@ -484,38 +484,132 @@
             font-size: 0.8rem;
             padding: 10px
         }
+
+        .google-btn {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            background: #fff;
+            color: #333;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter';
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            margin-bottom: 10px
+        }
+        .google-btn:hover {
+            background: #F5F5F5;
+            border-color: #1B4D3E
+        }
+        .google-btn img {
+            width: 20px; height: 20px
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+            font-size: 0.75rem;
+            color: #90A4AE
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #E0E0E0
+        }
+        .phone-step { display: none }
+        .phone-step.show { display: block }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #F5F7FA;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            text-align: left
+        }
+        .user-info img {
+            width: 40px; height: 40px; border-radius: 50%
+        }
+        .user-info-text { font-size: 0.82rem }
+        .user-info-name { font-weight: 700 }
+        .user-info-email { color: #90A4AE; font-size: 0.72rem }
+        .logout-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: #90A4AE;
+            cursor: pointer;
+            font-size: 0.7rem;
+            padding: 4px 8px
+        }
+        .logout-btn:hover { color: #EF5350 }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 
 <body>
     <!-- ===== REGISTRATION GATE ===== -->
     <div class="gate" id="gate">
-        <div class="gate-card">
-            <div class="gate-icon">📊</div>
-            <h1>Giá BĐS Hà Nội</h1>
-            <p>Cập nhật hàng ngày — Miễn phí 100%</p>
-            <div class="gate-features">
-                <div>✅ Giá đất 16 quận/huyện Hà Nội</div>
-                <div>📈 Xu hướng tăng/giảm theo tuần</div>
-                <div>🔥 Khu vực nào đang NÓNG nhất</div>
-                <div>💡 Gợi ý "Nên tìm hiểu" / "Chờ thêm"</div>
+        <div class="gate-card" style="position:relative">
+            <!-- Step 1: Google Sign-In -->
+            <div id="step-login">
+                <div class="gate-icon">📊</div>
+                <h1>Giá BĐS Hà Nội</h1>
+                <p>Cập nhật hàng ngày — Miễn phí 100%</p>
+                <div class="gate-features">
+                    <div>✅ Giá đất 16 quận/huyện Hà Nội</div>
+                    <div>📈 Xu hướng tăng/giảm theo tuần</div>
+                    <div>⭐ Chỉ số tiềm năng từng quận</div>
+                    <div>💡 Gợi ý đầu tư thông minh</div>
+                </div>
+                <button class="google-btn" onclick="googleSignIn()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+                    Đăng nhập bằng Google
+                </button>
+                <div class="divider">hoặc</div>
+                <input type="tel" id="reg-phone-quick" class="gate-input" placeholder="Nhập số điện thoại">
+                <button class="gate-btn" onclick="phoneOnlyLogin()">Xem nhanh →</button>
             </div>
-            <input type="text" id="reg-name" class="gate-input" placeholder="Họ tên">
-            <input type="tel" id="reg-phone" class="gate-input" placeholder="Số điện thoại">
-            <select id="reg-area" class="gate-input">
-                <option value="">— Khu vực quan tâm —</option>
-                <option value="hoai_duc">Hoài Đức</option>
-                <option value="dong_anh">Đông Anh</option>
-                <option value="nam_tu_liem">Nam Từ Liêm</option>
-                <option value="ha_dong">Hà Đông</option>
-                <option value="hoang_mai">Hoàng Mai</option>
-                <option value="cau_giay">Cầu Giấy</option>
-                <option value="thanh_xuan">Thanh Xuân</option>
-                <option value="tay_ho">Tây Hồ</option>
-                <option value="ba_dinh">Ba Đình</option>
-                <option value="khac">Khu vực khác</option>
-            </select>
-            <button class="gate-btn" onclick="register()">Xem giá đất miễn phí →</button>
+            <!-- Step 2: Phone number (after Google login) -->
+            <div id="step-phone" class="phone-step">
+                <div class="user-info" id="user-info-box">
+                    <img id="user-avatar" src="" alt="">
+                    <div class="user-info-text">
+                        <div class="user-info-name" id="user-display-name"></div>
+                        <div class="user-info-email" id="user-email-display"></div>
+                    </div>
+                </div>
+                <h1>👋 Chào mừng!</h1>
+                <p>Để nhận thông báo và tư vấn, vui lòng để lại số điện thoại</p>
+                <input type="tel" id="reg-phone" class="gate-input" placeholder="Số điện thoại">
+                <select id="reg-area" class="gate-input">
+                    <option value="">— Khu vực quan tâm —</option>
+                    <option value="hoai_duc">Hoài Đức</option>
+                    <option value="dong_anh">Đông Anh</option>
+                    <option value="nam_tu_liem">Nam Từ Liêm</option>
+                    <option value="ha_dong">Hà Đông</option>
+                    <option value="hoang_mai">Hoàng Mai</option>
+                    <option value="cau_giay">Cầu Giấy</option>
+                    <option value="thanh_xuan">Thanh Xuân</option>
+                    <option value="tay_ho">Tây Hồ</option>
+                    <option value="ba_dinh">Ba Đình</option>
+                    <option value="khac">Khu vực khác</option>
+                </select>
+                <button class="gate-btn" onclick="completeRegistration()">Hoàn tất đăng ký →</button>
+                <br><button class="popup-close" onclick="skipPhone()">Bỏ qua, xem luôn</button>
+            </div>
         </div>
     </div>
 
@@ -528,6 +622,7 @@
         <h1>📊 Giá BĐS Hà Nội <span class="live-badge"><span class="live-dot"></span> LIVE</span></h1>
         <p id="header-date">Đang cập nhật...</p>
     </div>
+    <button class="logout-btn" id="logout-btn" style="display:none" onclick="logout()">🚪 Đăng xuất</button>
 
     <div class="content">
         <div class="section-title">🔔 Thay đổi nổi bật tuần này</div>
@@ -580,13 +675,56 @@
     </div>
 
     <script>
+        // ===== FIREBASE CONFIG =====
+        // TODO: Replace with your Firebase config from console.firebase.google.com
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "1:000000000000:web:000000000000"
+        };
+        
+        // ===== APPS SCRIPT WEBHOOK =====
+        const WEBHOOK_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
+        
+        // Initialize Firebase
+        let firebaseReady = false;
+        try {
+            if (firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+                firebase.initializeApp(firebaseConfig);
+                firebaseReady = true;
+            }
+        } catch(e) { console.log('Firebase not configured yet'); }
+
+        // ===== DATA =====
         const FALLBACK = [{ "name": "Ba Đình", "gia": 238.3, "gia_cc": 154, "heat": 490, "cycle": 56, "views_tin": 11.0, "yoy": 6.0, "cat_lo": 13.3 }, { "name": "Đống Đa", "gia": 237.6, "gia_cc": 91, "heat": 543, "cycle": 60, "views_tin": 10.3, "yoy": 7.5, "cat_lo": 16.7 }, { "name": "Hoài Đức", "gia": 146.2, "gia_cc": null, "heat": 244, "cycle": 86, "views_tin": 6.4, "yoy": 56.0, "cat_lo": 0 }];
         let SUMMARY = FALLBACK;
         let DATA_INFO = { updated: '', method: 'fallback' };
+        let currentUser = null;
 
+        // ===== AUTH =====
         window.onload = async function () {
-            const user = JSON.parse(localStorage.getItem('bds_user') || 'null');
-            if (user && user.phone) document.getElementById('gate').classList.add('hidden');
+            // Check localStorage first
+            const saved = JSON.parse(localStorage.getItem('bds_user') || 'null');
+            if (saved && (saved.email || saved.phone)) {
+                currentUser = saved;
+                document.getElementById('gate').classList.add('hidden');
+                document.getElementById('logout-btn').style.display = 'block';
+                sendToWebhook({action: 'login', email: saved.email || '', name: saved.name || ''});
+            }
+            
+            // Listen for Firebase auth state
+            if (firebaseReady) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user && !currentUser) {
+                        handleGoogleUser(user);
+                    }
+                });
+            }
+            
+            // Load data
             try {
                 const res = await fetch('data.json');
                 if (res.ok) {
@@ -600,6 +738,126 @@
             renderLiveElements();
         };
 
+        function googleSignIn() {
+            if (!firebaseReady) {
+                alert('Chức năng đăng nhập Google chưa sẵn sàng. Vui lòng nhập số điện thoại.');
+                return;
+            }
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then(result => handleGoogleUser(result.user))
+                .catch(err => {
+                    console.error(err);
+                    if (err.code !== 'auth/popup-closed-by-user') {
+                        alert('Lỗi đăng nhập: ' + err.message);
+                    }
+                });
+        }
+
+        function handleGoogleUser(user) {
+            currentUser = {
+                email: user.email,
+                name: user.displayName,
+                photo: user.photoURL,
+                uid: user.uid
+            };
+            
+            // Check if user already has phone
+            const saved = JSON.parse(localStorage.getItem('bds_user') || 'null');
+            if (saved && saved.phone && saved.email === user.email) {
+                currentUser.phone = saved.phone;
+                localStorage.setItem('bds_user', JSON.stringify(currentUser));
+                document.getElementById('gate').classList.add('hidden');
+                document.getElementById('logout-btn').style.display = 'block';
+                sendToWebhook({action: 'login', email: user.email, name: user.displayName});
+                return;
+            }
+            
+            // Show phone step
+            document.getElementById('step-login').style.display = 'none';
+            document.getElementById('step-phone').classList.add('show');
+            document.getElementById('user-avatar').src = user.photoURL || '';
+            document.getElementById('user-display-name').textContent = user.displayName || '';
+            document.getElementById('user-email-display').textContent = user.email;
+        }
+
+        function completeRegistration() {
+            const phone = document.getElementById('reg-phone').value.trim();
+            const area = document.getElementById('reg-area').value;
+            if (!phone || phone.length < 9) { alert('Vui lòng nhập số điện thoại'); return; }
+            
+            currentUser.phone = phone;
+            currentUser.area = area;
+            localStorage.setItem('bds_user', JSON.stringify(currentUser));
+            
+            sendToWebhook({
+                action: 'register',
+                email: currentUser.email || '',
+                name: currentUser.name || '',
+                phone: phone,
+                area: area
+            });
+            
+            document.getElementById('gate').classList.add('hidden');
+            document.getElementById('logout-btn').style.display = 'block';
+        }
+
+        function skipPhone() {
+            localStorage.setItem('bds_user', JSON.stringify(currentUser));
+            sendToWebhook({
+                action: 'register',
+                email: currentUser.email || '',
+                name: currentUser.name || '',
+                phone: '',
+                area: ''
+            });
+            document.getElementById('gate').classList.add('hidden');
+            document.getElementById('logout-btn').style.display = 'block';
+        }
+
+        function phoneOnlyLogin() {
+            const phone = document.getElementById('reg-phone-quick').value.trim();
+            if (!phone || phone.length < 9) { alert('Vui lòng nhập số điện thoại'); return; }
+            currentUser = { phone: phone, name: '', email: '' };
+            localStorage.setItem('bds_user', JSON.stringify(currentUser));
+            sendToWebhook({action: 'register', email: '', name: '', phone: phone, area: ''});
+            document.getElementById('gate').classList.add('hidden');
+            document.getElementById('logout-btn').style.display = 'block';
+        }
+
+        function logout() {
+            localStorage.removeItem('bds_user');
+            currentUser = null;
+            if (firebaseReady) firebase.auth().signOut();
+            document.getElementById('gate').classList.remove('hidden');
+            document.getElementById('logout-btn').style.display = 'none';
+            document.getElementById('step-login').style.display = 'block';
+            document.getElementById('step-phone').classList.remove('show');
+        }
+
+        // ===== TRACKING =====
+        function trackClick(district) {
+            if (currentUser) {
+                sendToWebhook({
+                    action: 'track',
+                    email: currentUser.email || currentUser.phone || 'anonymous',
+                    type: 'view_district',
+                    detail: district
+                });
+            }
+        }
+
+        function sendToWebhook(data) {
+            if (!WEBHOOK_URL || WEBHOOK_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL') return;
+            fetch(WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(() => {});
+        }
+
+        // ===== UI FUNCTIONS =====
         function getHeatLabel(heat, views_tin) {
             if (views_tin >= 10) return { text: '🔥 RẤT NÓNG', cls: 'hot' };
             if (views_tin >= 7) return { text: '🟠 Đang nóng', cls: 'warm' };
@@ -610,18 +868,14 @@
             const vt = d.views_tin || 0;
             const cl = d.cat_lo || 0;
             const gia = d.gia || 0;
-            // Quan tâm cao + ít bán xả = thị trường khỏe
             if (vt >= 10 && cl < 10) return '✅ Thanh khoản tốt — phù hợp đầu tư ngắn hạn';
             if (vt >= 10 && cl >= 10) return '⚠️ Nhiều người bán xả — cẩn thận giá ảo';
-            // Quan tâm cao vừa
             if (vt >= 7 && cl < 10 && gia < 150) return '💡 Giá tầm trung — phù hợp mua ở thực';
             if (vt >= 7 && cl < 10 && gia >= 150) return '🏠 Khu vực cao cấp — đầu tư dài hạn';
             if (vt >= 7 && cl >= 10) return '🟡 Theo dõi thêm 2-4 tuần';
-            // Quan tâm trung bình
             if (vt >= 4 && cl < 8) return '📈 Đang phát triển — tiềm năng trung hạn';
             if (vt >= 4 && cl >= 15) return '⏸️ Bán xả nhiều — chờ đáy giá';
             if (vt >= 4) return '🔍 Theo dõi diễn biến cung-cầu';
-            // Quan tâm thấp
             if (cl > 20) return '🛑 Rủi ro cao — không nên vào lúc này';
             if (gia < 100) return '☕ Yên tĩnh — giá rẻ, chờ tín hiệu';
             return '🔍 Theo dõi';
@@ -631,161 +885,7 @@
             if (yoy < 0) return { text: yoy.toFixed(1) + '%', cls: 'down' };
             return { text: '0%', cls: '' };
         }
-
-        function renderDistricts() {
-            const el = document.getElementById('districts');
-            el.innerHTML = '';
-            const sorted = [...SUMMARY].filter(d => d.gia > 0).sort((a, b) => (b.potential || 0) - (a.potential || 0));
-            sorted.forEach((d, i) => {
-                const heat = getHeatLabel(d.heat, d.views_tin);
-                const yoy = getYoYText(d.yoy);
-                const advice = getAdvice(d);
-                const interest = d.views_tin.toFixed(1);
-                const giaCC = d.gia_cc ? d.gia_cc.toFixed(0) + ' tr/m²' : '—';
-                el.innerHTML += `
-                <div class="district" onclick="trackClick('${d.name}')">
-                    <div class="d-top">
-                        <span class="d-name">#${i + 1} ${d.name}</span>
-                        
-                    </div>
-                    <div class="d-stats">
-                        <div><div class="d-stat-label">🏠 Nhà đất</div><div class="d-stat-value price">${d.gia.toFixed(0)} tr/m²</div></div>
-                        <div><div class="d-stat-label">🏢 Chung cư</div><div class="d-stat-value ${d.gia_cc ? 'price' : 'muted'}">${giaCC}</div></div>
-                        <div><div class="d-stat-label">📋 Tin rao</div><div class="d-stat-value">${d.tin ? d.tin.toLocaleString() : "—"} ${d.delta_tin !== null && d.delta_tin !== undefined ? (d.delta_tin > 0 ? '<span style="font-size:0.65rem;color:#4CAF50">▲' + d.delta_tin.toFixed(0) + '%</span>' : d.delta_tin < 0 ? '<span style="font-size:0.65rem;color:#EF5350">▼' + Math.abs(d.delta_tin).toFixed(0) + '%</span>' : '<span style="font-size:0.65rem;color:#90A4AE">↔ 0%</span>') : '<span style="font-size:0.65rem;color:#90A4AE">⏳</span>'}</div></div>
-                        <div><div class="d-stat-label">🔥 Quan tâm</div><div class="d-stat-value demand">${interest} ${d.delta !== null && d.delta !== undefined ? (d.delta > 0 ? '<span style="font-size:0.7rem;color:#4CAF50">▲' + d.delta.toFixed(0) + '%</span>' : d.delta < 0 ? '<span style="font-size:0.7rem;color:#EF5350">▼' + Math.abs(d.delta).toFixed(0) + '%</span>' : '<span style="font-size:0.7rem;color:#90A4AE">↔</span>') : '<span style="font-size:0.7rem;color:#90A4AE">⏳</span>'}</div></div>
-                        
-                    </div>
-                    <div style="grid-column:1/-1;margin-top:2px"><div class="d-stat-label">⭐ Tiềm năng</div><div style="display:flex;align-items:center;gap:8px;margin-top:3px"><div style="flex:1;background:#f0f0f0;border-radius:4px;height:8px;overflow:hidden"><div style="height:100%;border-radius:4px;background:${d.potential >= 65 ? '#4CAF50' : d.potential >= 45 ? '#FF9800' : '#EF5350'};width:${d.potential || 0}%"></div></div><span style="font-size:0.75rem;font-weight:700;color:${d.potential >= 65 ? '#4CAF50' : d.potential >= 45 ? '#FF9800' : '#EF5350'}">${(d.potential || 0).toFixed(0)}/100</span></div></div>
-                    <div style="grid-column:1/-1;border-top:1px solid #f0f0f0;padding-top:6px;margin-top:4px"><div class="d-stat-label">💡 Gợi ý</div><div class="d-stat-value" style="font-size:0.82rem">${advice}</div></div>
-                    
-                </div>
-                </div>`;
-            });
-        }
-
-        function renderCharts() {
-            Chart.defaults.font.family = 'Inter';
-            Chart.defaults.font.size = 12;
-            // Auto-switch: delta_gia (30+ ngày) hoặc potential (mặc định)
-            const hasDeltaGia = SUMMARY.some(d => d.delta_gia !== null && d.delta_gia !== undefined);
-            let top5, chartLabel, chartData, chartColors, chartBorders, ySuffix;
-            if (hasDeltaGia) {
-                top5 = SUMMARY.filter(d => d.delta_gia !== null).sort((a, b) => Math.abs(b.delta_gia) - Math.abs(a.delta_gia)).slice(0, 5);
-                chartLabel = 'Gia tốc giá tháng (%)';
-                chartData = top5.map(d => d.delta_gia);
-                chartColors = top5.map(d => d.delta_gia > 5 ? '#4CAF5090' : d.delta_gia < -5 ? '#EF535090' : '#42A5F590');
-                chartBorders = top5.map(d => d.delta_gia > 5 ? '#4CAF50' : d.delta_gia < -5 ? '#EF5350' : '#42A5F5');
-                ySuffix = '%';
-                document.querySelector('#trendChart').closest('.chart-card').querySelector('h3').textContent = 'Top 5 biến động giá mạnh nhất (so tháng trước)';
-            } else {
-                top5 = SUMMARY.filter(d => d.gia > 0).sort((a, b) => (b.potential||0) - (a.potential||0)).slice(0, 5);
-                chartLabel = 'Điểm tiềm năng';
-                chartData = top5.map(d => d.potential || 0);
-                chartColors = top5.map(d => (d.potential||0) >= 65 ? '#4CAF5090' : (d.potential||0) >= 45 ? '#FF980090' : '#42A5F590');
-                chartBorders = top5.map(d => (d.potential||0) >= 65 ? '#4CAF50' : (d.potential||0) >= 45 ? '#FF9800' : '#42A5F5');
-                ySuffix = '';
-            }
-            new Chart(document.getElementById('trendChart'), {
-                type: 'bar',
-                data: { labels: top5.map(d => d.name), datasets: [{ label: chartLabel, data: chartData, backgroundColor: chartColors, borderColor: chartBorders, borderWidth: 1.5, borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + ySuffix }, grid: { color: '#E0E0E030' } }, x: { grid: { display: false } } } }
-            });
-            const demandSorted = [...SUMMARY].filter(d => d.gia > 0).sort((a, b) => (b.potential || 0) - (a.potential || 0)).slice(0, 8);
-            new Chart(document.getElementById('demandChart'), {
-                type: 'bar',
-                data: { labels: demandSorted.map(d => d.name), datasets: [{ label: 'Nhu cầu tìm kiếm', data: demandSorted.map(d => d.views_tin), backgroundColor: '#1B4D3E40', borderColor: '#1B4D3E', borderWidth: 1.5, borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#E0E0E030' } }, y: { grid: { display: false } } } }
-            });
-        }
-
-        function register() {
-            const name = document.getElementById('reg-name').value.trim();
-            const phone = document.getElementById('reg-phone').value.trim();
-            const area = document.getElementById('reg-area').value;
-            if (!phone || phone.length < 9) { alert('Vui lòng nhập số điện thoại'); return; }
-            const lead = { name, phone, area, time: new Date().toISOString(), views: [] };
-            localStorage.setItem('bds_user', JSON.stringify(lead));
-            sendToSheets({ type: 'register', name, phone, area });
-            document.getElementById('gate').classList.add('hidden');
-        }
-
-        function trackClick(district) {
-            const user = JSON.parse(localStorage.getItem('bds_user') || '{}');
-            if (user.phone) {
-                user.views = user.views || [];
-                user.views.push({ district, time: new Date().toISOString() });
-                localStorage.setItem('bds_user', JSON.stringify(user));
-                sendToSheets({ type: 'view', phone: user.phone, district });
-            }
-        }
-
-        function sendToSheets(data) {
-            const WEBHOOK_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
-            if (WEBHOOK_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL') return;
-            fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => { });
-        }
-
-        function showContact() {
-            document.getElementById('contactOverlay').classList.add('show');
-            trackClick('contact_btn');
-        }
-        function closeContact() { document.getElementById('contactOverlay').classList.remove('show'); }
-        function submitContact() {
-            const name = document.getElementById('ct-name').value.trim();
-            const phone = document.getElementById('ct-phone').value.trim();
-            const note = document.getElementById('ct-note').value.trim();
-            if (!phone) { alert('Vui lòng nhập số điện thoại'); return; }
-            sendToSheets({ type: 'contact', name, phone, note });
-            alert('Cảm ơn bạn! Chúng tôi sẽ liên hệ trong 24h.');
-            closeContact();
-        }
-
-        function renderLiveElements() {
-            const now = new Date();
-            const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-            document.getElementById('header-date').textContent = 'Cập nhật: ' + dayNames[now.getDay()] + ', ' + now.getDate() + '/' + (now.getMonth() + 1) + '/' + now.getFullYear();
-
-            const hotDistricts = SUMMARY.filter(d => d.heat >= 400);
-            const topGrowth = [...SUMMARY].sort((a, b) => b.yoy - a.yoy)[0];
-            const msgs = [
-                '🔥 ' + hotDistricts.length + ' quận đang RẤT NÓNG tuần này',
-                '📈 ' + topGrowth.name + ' tăng mạnh nhất: +' + topGrowth.yoy + '% so năm trước',
-                '💰 Giá trung bình Hà Nội: ' + (SUMMARY.reduce((s, d) => s + d.gia, 0) / SUMMARY.filter(d => d.gia > 0).length).toFixed(0) + ' tr/m²',
-                '👁️ Khu vực được tìm kiếm nhiều nhất: ' + [...SUMMARY].sort((a, b) => (b.potential || 0) - (a.potential || 0))[0].name,
-                '⚠️ ' + SUMMARY.filter(d => d.cat_lo > 10).length + ' quận có tỷ lệ bán xả cao',
-            ];
-            const tickerEl = document.getElementById('ticker');
-            const tickerHTML = msgs.map(m => '<span class="ticker-item">' + m + '</span>').join('');
-            tickerEl.innerHTML = tickerHTML + tickerHTML;
-
-            const changesEl = document.getElementById('weekly-changes');
-            const topPotential = [...SUMMARY].filter(d => d.potential > 0).sort((a,b) => (b.potential||0) - (a.potential||0)).slice(0, 4);
-            const risky = SUMMARY.filter(d => d.cat_lo > 12);
-            let html = '';
-            if (topPotential.length > 0) {
-                html += '<div class="change-alert"><div class="ca-title">⭐ Top ' + topPotential.length + ' quận tiềm năng nhất</div>';
-                html += '<div class="ca-text">' + topPotential.map(d => d.name + ' (' + (d.potential||0).toFixed(0) + '/100)').join(', ') + '</div></div>';
-            }
-            if (risky.length > 0) {
-                html += '<div class="change-alert down"><div class="ca-title">⚠️ ' + risky.length + ' quận có tỷ lệ bán xả cao</div>';
-                html += '<div class="ca-text">' + risky.map(d => d.name + ' (' + d.cat_lo + '%)').join(', ') + ' — Cẩn thận khi đầu tư</div></div>';
-            }
-            changesEl.innerHTML = html;
-
-            function updateCountdown() {
-                const now = new Date();
-                const next = new Date(now);
-                next.setHours(22, 0, 0, 0);
-                if (now >= next) next.setDate(next.getDate() + 1);
-                const diff = next - now;
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                document.getElementById('countdown').textContent = h + ' giờ ' + m + ' phút';
-            }
-            updateCountdown();
-            setInterval(updateCountdown, 60000);
-        }
-    </script>
+</script>
 </body>
 
 </html>
