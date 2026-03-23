@@ -584,6 +584,42 @@
         .logout-btn:hover {
             color: #EF5350
         }
+
+        .district-locked {
+            position: relative;
+            filter: blur(6px);
+            pointer-events: none;
+            user-select: none
+        }
+        .unlock-banner {
+            background: linear-gradient(135deg, #1B4D3E, #2E7D5C);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin: 16px 0;
+            cursor: pointer;
+            transition: all 0.3s
+        }
+        .unlock-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(27,77,62,0.3)
+        }
+        .unlock-banner h3 {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 6px
+        }
+        .unlock-banner p {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.75rem
+        }
+        .unlock-banner .google-btn {
+            margin-top: 12px;
+            max-width: 280px;
+            margin-left: auto;
+            margin-right: auto
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -591,7 +627,7 @@
 
 <body>
     <!-- ===== REGISTRATION GATE ===== -->
-    <div class="gate" id="gate">
+    <div class="gate hidden" id="gate">
         <div class="gate-card" style="position:relative">
             <!-- Step 1: Google Sign-In -->
             <div id="step-login">
@@ -829,6 +865,7 @@
 
             document.getElementById('gate').classList.add('hidden');
             document.getElementById('logout-btn').style.display = 'block';
+            renderDistricts();
         }
 
         function skipPhone() {
@@ -852,6 +889,7 @@
             sendToWebhook({ action: 'register', email: '', name: '', phone: phone, area: '' });
             document.getElementById('gate').classList.add('hidden');
             document.getElementById('logout-btn').style.display = 'block';
+            renderDistricts();
         }
 
         function logout() {
@@ -862,6 +900,7 @@
             document.getElementById('logout-btn').style.display = 'none';
             document.getElementById('step-login').style.display = 'block';
             document.getElementById('step-phone').classList.remove('show');
+            renderDistricts();
         }
 
         // ===== TRACKING =====
@@ -915,18 +954,22 @@
             return { text: '0%', cls: '' };
         }
 
+        const FREE_COUNT = 5;
+        
         function renderDistricts() {
             const el = document.getElementById('districts');
             el.innerHTML = '';
             const sorted = [...SUMMARY].filter(d => d.gia > 0).sort((a, b) => (b.potential || 0) - (a.potential || 0));
+            const isLoggedIn = !!currentUser;
             sorted.forEach((d, i) => {
+                const isLocked = !isLoggedIn && i >= FREE_COUNT;
                 const heat = getHeatLabel(d.heat, d.views_tin);
                 const yoy = getYoYText(d.yoy);
                 const advice = getAdvice(d);
                 const interest = d.views_tin.toFixed(1);
                 const giaCC = d.gia_cc ? d.gia_cc.toFixed(0) + ' tr/m²' : '—';
                 el.innerHTML += `
-                <div class="district" onclick="trackClick('${d.name}')">
+                <div class="district ${isLocked ? 'district-locked' : ''}" onclick="${isLocked ? 'showLoginPopup()' : "trackClick('" + d.name + "')"}">
                     <div class="d-top">
                         <span class="d-name">#${i + 1} ${d.name}</span>
                     </div>
@@ -941,6 +984,22 @@
                 </div>
                 </div>`;
             });
+            // Show unlock banner if not logged in
+            if (!isLoggedIn && sorted.length > FREE_COUNT) {
+                el.innerHTML += `
+                <div class="unlock-banner" onclick="showLoginPopup()">
+                    <h3>🔒 Đăng nhập để xem tất cả ${sorted.length} quận</h3>
+                    <p>Bạn đang xem ${FREE_COUNT}/${sorted.length} quận — Đăng nhập Google miễn phí để mở khóa</p>
+                    <button class="google-btn" onclick="googleSignIn(); event.stopPropagation();">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+                        Đăng nhập bằng Google
+                    </button>
+                </div>`;
+            }
+        }
+
+        function showLoginPopup() {
+            document.getElementById('gate').classList.remove('hidden');
         }
 
         function renderCharts() {
