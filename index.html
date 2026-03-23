@@ -794,8 +794,8 @@
             <div style="font-size:2rem;margin-bottom:12px">👋</div>
             <h2>Chào mừng bạn!</h2>
             <p>Để nhận thông báo biến động giá qua Zalo, vui lòng để lại SĐT</p>
-            <input type="tel" id="reg-phone" class="gate-input" placeholder="Số điện thoại">
-            <select id="reg-area" class="gate-input">
+            <input type="tel" id="reg-phone2" class="gate-input" placeholder="Số điện thoại">
+            <select id="reg-area2" class="gate-input">
                 <option value="">— Khu vực quan tâm —</option>
                 <option value="hoai_duc">Hoài Đức</option>
                 <option value="dong_anh">Đông Anh</option>
@@ -942,8 +942,8 @@
         }
 
         function completeRegistration() {
-            const phone = document.getElementById('reg-phone').value.trim();
-            const area = document.getElementById('reg-area').value;
+            const phone = document.getElementById('reg-phone2').value.trim();
+            const area = document.getElementById('reg-area2').value;
             if (!phone || phone.length < 9) { alert('Vui lòng nhập số điện thoại'); return; }
 
             currentUser.phone = phone;
