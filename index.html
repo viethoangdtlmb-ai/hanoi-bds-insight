@@ -855,16 +855,19 @@
 
         function googleSignIn() {
             if (!firebaseReady) {
-                alert('Chức năng đăng nhập Google chưa sẵn sàng. Vui lòng nhập số điện thoại.');
+                alert('Chức năng đăng nhập Google chưa sẵn sàng.');
                 return;
             }
             const provider = new firebase.auth.GoogleAuthProvider();
+            // Try popup first, fallback to redirect
             firebase.auth().signInWithPopup(provider)
-                .then(result => handleGoogleUser(result.user))
+                .then(result => {
+                    if (result.user) handleGoogleUser(result.user);
+                })
                 .catch(err => {
-                    console.error(err);
-                    if (err.code !== 'auth/popup-closed-by-user') {
-                        alert('Lỗi đăng nhập: ' + err.message);
+                    console.error('Popup failed, trying redirect:', err.code);
+                    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+                        firebase.auth().signInWithRedirect(provider);
                     }
                 });
         }
