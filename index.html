@@ -620,6 +620,56 @@
             margin-left: auto;
             margin-right: auto
         }
+
+        .sticky-login {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #1B4D3E, #2E7D5C);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            z-index: 400;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+            max-width: 500px;
+            margin: 0 auto;
+            transition: transform 0.3s
+        }
+        .sticky-login.hidden {
+            transform: translateY(100%)
+        }
+        .sticky-login-text {
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 600
+        }
+        .sticky-login-btn {
+            background: #fff;
+            color: #1B4D3E;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'Inter';
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: all 0.3s
+        }
+        .sticky-login-btn:hover {
+            background: #f0f0f0;
+            transform: scale(1.03)
+        }
+        .sticky-login-btn img {
+            width: 16px; height: 16px
+        }
+        .footer { padding-bottom: 70px }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -984,6 +1034,12 @@
                 </div>
                 </div>`;
             });
+            // Show/hide sticky bar
+            const stickyEl = document.getElementById('stickyLogin');
+            if (stickyEl) {
+                if (!isLoggedIn) { stickyEl.classList.remove('hidden'); }
+                else { stickyEl.classList.add('hidden'); }
+            }
             // Show unlock banner if not logged in
             if (!isLoggedIn && sorted.length > FREE_COUNT) {
                 el.innerHTML += `
@@ -1097,6 +1153,15 @@
             setInterval(updateCountdown, 60000);
         }
     </script>
+
+    <!-- STICKY LOGIN BAR -->
+    <div class="sticky-login hidden" id="stickyLogin" onclick="showLoginPopup()">
+        <span class="sticky-login-text">🔒 Xem tất cả 16 quận</span>
+        <button class="sticky-login-btn" onclick="googleSignIn(); event.stopPropagation();">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+            Đăng nhập
+        </button>
+    </div>
 </body>
 
 </html>
