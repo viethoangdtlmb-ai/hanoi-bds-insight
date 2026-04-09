@@ -684,6 +684,91 @@
         .footer {
             padding-bottom: 70px
         }
+
+        .district { cursor: pointer; transition: all 0.3s }
+        .district:hover { transform: translateY(-1px) }
+        .d-expand-hint {
+            grid-column: 1/-1;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #90A4AE;
+            padding-top: 4px;
+            transition: all 0.3s
+        }
+        .district.expanded .d-expand-hint { transform: rotate(180deg) }
+        .d-charts {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+            grid-column: 1/-1
+        }
+        .district.expanded .d-charts {
+            max-height: 1200px
+        }
+        .d-chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 12px 0 4px
+        }
+        .d-chart-item {
+            background: #f8faf9;
+            border-radius: 10px;
+            padding: 10px
+        }
+        .d-chart-item h4 {
+            font-size: 0.7rem;
+            color: #546E7A;
+            margin-bottom: 6px;
+            text-align: center
+        }
+        .d-chart-item canvas {
+            width: 100% !important;
+            height: 100px !important
+        }
+        .d-chart-lock {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 20px;
+            background: #f0f4f2;
+            border-radius: 10px;
+            margin-top: 8px
+        }
+        .d-chart-lock p {
+            font-size: 0.8rem;
+            color: #546E7A;
+            margin-bottom: 8px
+        }
+        .d-chart-lock .gate-btn {
+            font-size: 0.75rem;
+            padding: 8px 16px;
+            max-width: 200px;
+            margin: 0 auto
+        }
+        .sparkline-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 4px
+        }
+        .sparkline-wrap canvas {
+            width: 40px !important;
+            height: 14px !important
+        }
+        .trend-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 700;
+            margin-top: 6px
+        }
+        .trend-badge.buy { background: #E8F5E9; color: #2E7D32 }
+        .trend-badge.wait { background: #FFF3E0; color: #E65100 }
+        .trend-badge.caution { background: #FFEBEE; color: #C62828 }
+        @media (max-width: 400px) {
+            .d-chart-grid { grid-template-columns: 1fr }
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -885,6 +970,7 @@
                     const data = await res.json();
                     SUMMARY = data.districts || FALLBACK;
                     DATA_INFO = { updated: data.updated, method: data.method, range: data.date_range, days: data.num_days };
+                    HISTORY = data.history || {};
                 }
             } catch (e) { console.log('Using fallback data'); }
             renderDistricts();
@@ -1098,6 +1184,109 @@
 
         function showLoginPopup() {
             document.getElementById('gate').classList.remove('hidden');
+        }
+
+        function getTrendBadge(d) {
+            const vt = d.views_tin || 0;
+            const cl = d.cat_lo || 0;
+            const dt = d.delta_tin;
+            const dv = d.delta;
+            // Trend-based advice
+            if (vt >= 8 && cl < 8 && (dv === null || dv > -5)) return { text: '🔥 Nên tìm hiểu', cls: 'buy' };
+            if (vt >= 6 && cl < 10) return { text: '✅ Tiềm năng', cls: 'buy' };
+            if (cl >= 15) return { text: '⚠️ Cẩn thận', cls: 'caution' };
+            if (vt < 4 && cl >= 10) return { text: '⏸️ Chờ thêm', cls: 'wait' };
+            return { text: '🔍 Theo dõi', cls: 'wait' };
+        }
+
+        function toggleDistrict(el, name) {
+            trackClick(name);
+            const isExpanded = el.classList.contains('expanded');
+            // Close all other expanded
+            document.querySelectorAll('.district.expanded').forEach(d => {
+                d.classList.remove('expanded');
+            });
+            if (!isExpanded) {
+                // Check if user has phone (required for charts)
+                if (!currentUser || !currentUser.phone) {
+                    // Show phone popup
+                    if (!currentUser) {
+                        showLoginPopup();
+                    } else {
+                        document.getElementById('phoneOverlay').classList.add('show');
+                    }
+                    return;
+                }
+                el.classList.add('expanded');
+                const chartId = 'chart-' + name.replace(/\s/g, '-');
+                const container = document.getElementById('charts-' + chartId);
+                if (container && !container.hasChildNodes()) {
+                    renderDistrictCharts(container, name);
+                }
+            }
+        }
+
+        function renderDistrictCharts(container, name) {
+            const h = HISTORY[name];
+            if (!h || !h.labels || h.labels.length < 1) {
+                container.innerHTML = '<div class="d-chart-lock"><p>⏳ Biểu đồ sẽ có khi hệ thống thu thập đủ dữ liệu (2+ tuần)</p></div>';
+                return;
+            }
+            const labels = h.labels.map(l => {
+                const parts = l.split('-');
+                return parts[2] + '/' + parts[1];
+            });
+            const chartConfigs = [
+                { id: 'gia', label: '🏠 Giá nhà đất (tr/m²)', data: h.gia, color: '#1B4D3E', suffix: ' tr' },
+                { id: 'gia_cc', label: '🏢 Giá chung cư (tr/m²)', data: h.gia_cc, color: '#3F51B5', suffix: ' tr' },
+                { id: 'tin', label: '📋 Tin rao', data: h.tin, color: '#FF9800', suffix: '' },
+                { id: 'vt', label: '🔥 Quan tâm', data: h.views_tin, color: '#E91E63', suffix: '' }
+            ];
+
+            let html = '<div class="d-chart-grid">';
+            chartConfigs.forEach((cfg, idx) => {
+                const hasData = cfg.data && cfg.data.some(v => v !== null && v !== undefined);
+                if (hasData) {
+                    html += '<div class="d-chart-item"><h4>' + cfg.label + '</h4><canvas id="dc-' + name.replace(/\s/g, '') + '-' + cfg.id + '"></canvas></div>';
+                }
+            });
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Render charts
+            setTimeout(() => {
+                chartConfigs.forEach(cfg => {
+                    const hasData = cfg.data && cfg.data.some(v => v !== null && v !== undefined);
+                    if (!hasData) return;
+                    const canvas = document.getElementById('dc-' + name.replace(/\s/g, '') + '-' + cfg.id);
+                    if (!canvas) return;
+                    new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: cfg.data,
+                                borderColor: cfg.color,
+                                backgroundColor: cfg.color + '20',
+                                borderWidth: 2,
+                                tension: 0.3,
+                                fill: true,
+                                pointRadius: 3,
+                                pointBackgroundColor: cfg.color
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { ticks: { font: { size: 9 }, callback: v => v + cfg.suffix }, grid: { color: '#E0E0E018' } },
+                                x: { ticks: { font: { size: 9 } }, grid: { display: false } }
+                            }
+                        }
+                    });
+                });
+            }, 100);
         }
 
         function renderCharts() {
